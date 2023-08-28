@@ -3,6 +3,10 @@ uuid = "05107f91-cac6-4284-93e5-bdda0712134e"
 authors = ["Henri Vuollekoski <henri.vuollekoski@fmi.fi> and contributors"]
 version = "1.0.0-DEV"
 
+[deps]
+CairoMakie = "13f3f980-e62b-5c42-98c6-ff1f3baf88f0"
+NCDatasets = "85f8d34a-cbdd-5861-8df4-14fed0d494ab"
+
 [compat]
 julia = "1"
 

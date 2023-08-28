@@ -4,6 +4,8 @@ using NCDatasets
 
 include("plots.jl")
 
+export plot_field, plot_surface_current, plot_wind
+
 const coord_filename::String="domain_cfg.nc"
 const mask_filename::String="mesh_mask.nc"
 
