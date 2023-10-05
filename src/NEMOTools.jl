@@ -43,19 +43,24 @@ function get_mask(mapper=Dict([(0, NaN), (1, 1)]), mask_filename::String=mask_fi
 end
 
 
-function divergence2d(fx, fy, x, y)
-    dfxdx = (diff(fx, dims=1) ./ diff(x, dims=1))[:, 1:end-1]
-    dfydy = (diff(fy, dims=2) ./ diff(y, dims=2))[2:end, :]
-    return dfxdx + dfydy
-end
-
-function vorticity2d(fx, fy, x, y)
-    dfydx = (diff(fy, dims=1) ./ diff(x, dims=1))[:, 1:end-1]
-    dfxdy = (diff(fx, dims=2) ./ diff(y, dims=2))[2:end, :]    
-    return dfydx - dfxdy
+function divergence2d(fx::Matrix{Real}, fy::Matrix{Real}, x::Matrix{Real}, y::Matrix{Real})
+    dfxdx = diff(fx, dims=1) ./ diff(x, dims=1)
+    dfydy = diff(fy, dims=2) ./ diff(y, dims=2)
+    return get_middle(dfxdx, 2) + get_middle(dfydy, 1)
 end
 
 
+function vorticity2d(fx::Matrix{Real}, fy::Matrix{Real}, x::Matrix{Real}, y::Matrix{Real})
+    dfydx = diff(fy, dims=1) ./ diff(x, dims=1)
+    dfxdy = diff(fx, dims=2) ./ diff(y, dims=2)
+    return get_middle(dfydx, 2) - get_middle(dfxdy, 1)
+end
+
+
+"Find midpoints (2-point averages) of x along d."
+function get_middle(x::AbstractArray, d::Integer)
+    n = size(x)[d]
+    (selectdim(x, d, 1:n-1) + selectdim(x, d, 2:n)) ./ 2.0
 end
 
 
