@@ -1,6 +1,7 @@
 using CairoMakie, NCDatasets
 
 
+"Show an arrow plot of the surface wind."
 function plot_wind(ncfilename::String; time_index::Int=1, skip::Int=10)
     lat, lon = map(x -> thinner(x, skip)[:], get_latlon())
     tauu = NCDataset(ncfilename)["tauuo"][:, :, time_index]
@@ -17,6 +18,7 @@ function plot_wind(ncfilename::String; time_index::Int=1, skip::Int=10)
 end
 
 
+"Show an arrow plot of the surface current."
 function plot_surface_current(ncfilename_u::String, ncfilename_v::String; time_index::Int=1, skip::Int=10)
     lat, lon = map(x -> thinner(x, skip)[:], get_latlon())
     u = NCDataset(ncfilename_u)["uos"][:, :, time_index]
@@ -31,17 +33,22 @@ function plot_surface_current(ncfilename_u::String, ncfilename_v::String; time_i
 end
 
 
+"Show a surface plot of a field in NetCDF file."
 function plot_field(filename::String, fieldname::String; time_index::Int=1, skip::Int=1, level::Int=0, 
-    fig=nothing, ax=nothing, kwargs...)
-    lat, lon = map(x -> thinner(x, skip)[:], get_latlon())
-    mask = thinner(get_mask(), skip)
+    fig=nothing, ax=nothing, coord_filename=nothing, kwargs...)
+    lat, lon = map(x -> thinner(x, skip)[:], get_latlon(coord_filename))
+    mask = try
+        thinner(get_mask(), skip)
+    catch
+        [1]
+    end
     if (level > 0)
-    data = NCDataset(filename)[fieldname][:, :, level, time_index]
+        data = NCDataset(filename)[fieldname][:, :, level, time_index]
     else
-    data = NCDataset(filename)[fieldname][:, :, time_index]
+        data = NCDataset(filename)[fieldname][:, :, time_index]
     end
     data1 = (thinner(data, skip) .* mask)[:]
-    fig = isnothing(fig) ? Figure(resolution=size(data)) : fig
+    fig = isnothing(fig) ? Figure() : fig
     ax = isnothing(ax) ? Axis(fig[1,1]) : ax
     plt = surface!(ax, lon, lat, data1)
     label = haskey(kwargs, :label) ? kwargs[:label] : fieldname
@@ -50,6 +57,7 @@ function plot_field(filename::String, fieldname::String; time_index::Int=1, skip
 end
 
 
+"Animate a field in NetCDF file."
 function animate_field(filename::String, fieldname::String; skip::Int=1, level::Int=0, 
     fig=nothing, ax=nothing, framerate::Int=5, kwargs...)
     lat, lon = get_latlon()

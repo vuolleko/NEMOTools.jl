@@ -21,7 +21,7 @@ end
 
 
 function get_latlon(coord_filename::String=coord_filename)
-    isfile(coord_filename) || throw("No such file")
+    isfile(coord_filename) || throw("No such file: " * coord_filename)
     lat = NCDataset(coord_filename)["nav_lat"][:]
     lon = NCDataset(coord_filename)["nav_lon"][:]
     return lat, lon
@@ -37,7 +37,7 @@ end
 
 
 function get_mask(mapper=Dict([(0, NaN), (1, 1)]), mask_filename::String=mask_filename)
-    isfile(mask_filename) || throw("No such file")
+    isfile(mask_filename) || throw("No such file: " * mask_filename)
     mask = NCDataset(mask_filename)["tmaskutil"][:, :, 1]
     return map(i->mapper[i], mask)
 end
@@ -57,3 +57,6 @@ end
 
 
 end
+
+
+end  # module
