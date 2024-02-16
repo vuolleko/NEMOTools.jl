@@ -2,28 +2,35 @@ module NEMOTools
 
 using NCDatasets
 
+include("io.jl")
 include("plots.jl")
 
-export plot_field, plot_surface_current, plot_wind
+export plot_field, plot_surface_current, plot_wind, animate_field
 
-const coord_filename::String="domain_cfg.nc"
-const mask_filename::String="mesh_mask.nc"
+const COORD_FILENAME::String="domain_cfg.nc"
+const MASK_FILENAME::String="mesh_mask.nc"
 
 
-function thinner(A::AbstractArray, skip::Int=10)
+"Struct containing variables relevant for current experiment"
+
+"Thin an array by choosing every nth element."
+function thinner(A::AbstractArray, n::Int...)
     lens = size(A)
+    n = [n...]
+    length(n) == 1 && (n = repeat(n, length(lens)))
+    @assert length(n) == length(lens)
     B = copy(A)
-    for i in 1:length(lens)
-        B = selectdim(B, i, 1:skip:lens[i])
+    for i in eachindex(lens)
+        B = selectdim(B, i, 1:n[i]:lens[i])
     end
     return typeof(A)(B)
 end
 
 
-function get_latlon(coord_filename::String=coord_filename)
+function get_latlon(coord_filename::String=COORD_FILENAME)
     isfile(coord_filename) || throw("No such file: " * coord_filename)
-    lat = NCDataset(coord_filename)["nav_lat"][:]
-    lon = NCDataset(coord_filename)["nav_lon"][:]
+    lat = NCDataset(coord_filename)["nav_lat"][:, :]
+    lon = NCDataset(coord_filename)["nav_lon"][:, :]
     return lat, lon
 end
 
@@ -36,9 +43,13 @@ function min2zero(arr::AbstractArray)
 end
 
 
-function get_mask(mapper=Dict([(0, NaN), (1, 1)]), mask_filename::String=mask_filename)
-    isfile(mask_filename) || throw("No such file: " * mask_filename)
-    mask = NCDataset(mask_filename)["tmaskutil"][:, :, 1]
+function get_mask(mapper=Dict([(0, NaN), (1, 1)]), mask_filename::String=MASK_FILENAME)
+    # isfile(mask_filename) || throw("No such file: " * mask_filename)
+    mask = try
+        NCDataset(mask_filename)["tmaskutil"][:, :, 1]
+    catch
+        [1]
+    end
     return map(i->mapper[i], mask)
 end
 
