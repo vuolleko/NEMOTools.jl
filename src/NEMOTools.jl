@@ -5,7 +5,7 @@ using NCDatasets
 include("io.jl")
 include("plots.jl")
 
-export plot_field, plot_surface_current, plot_wind, animate_field
+export plot_field, plot_surface_current, plot_wind, animate_field, set_ticks_in_km!
 
 const COORD_FILENAME::String="domain_cfg.nc"
 const MASK_FILENAME::String="mesh_mask.nc"
@@ -71,7 +71,7 @@ end
 "Find midpoints (2-point averages) of x along d."
 function get_middle(x::AbstractArray, d::Integer)
     n = size(x)[d]
-    (selectdim(x, d, 1:n-1) + selectdim(x, d, 2:n)) ./ 2.0
+    return (selectdim(x, d, 1:n-1) + selectdim(x, d, 2:n)) ./ 2.0
 end
 
 

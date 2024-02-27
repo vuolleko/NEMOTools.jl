@@ -52,24 +52,30 @@ function plot_surface_current(
 end
 
 
+"Show a surface plot of a data matrix."
+function plot_field(
+    data::AbstractArray,
+    coord_filename::String;
+    kwargs...
+)
+    fig, ax, plt = _surface!(data; coord_filename=coord_filename, kwargs...)
+    label = haskey(kwargs, :label) ? kwargs[:label] : ""
+    Colorbar(fig[1,2], plt, label=label)
+    return fig
+end
+
+
 "Show a surface plot of a field in NetCDF file."
 function plot_field(
     filename::String,
     fieldname::String;
     coord_filename::String="",
-    km_ticks::Bool=false,
     kwargs...
 )
     data = NCDataset(filename)[fieldname]
     isempty(coord_filename) && (coord_filename = filename)
-    fig, ax, plt = _surface!(data; coord_filename=coord_filename, kwargs...)
     label = haskey(kwargs, :label) ? kwargs[:label] : fieldname
-    Colorbar(fig[1,2], plt, label=label)
-    if km_ticks
-        lat, lon = get_latlon(coord_filename)
-        _set_ticks_in_km!(ax, lat, lon)
-    end
-    return fig
+    return plot_field(data, coord_filename; label=label, kwargs...)
 end
 
 
@@ -77,6 +83,17 @@ end
 function animate_field(
     filename::String,
     fieldname::String;
+    kwargs...
+)
+    var = NCDataset(filename)[fieldname]
+    label = haskey(kwargs, :label) ? kwargs[:label] : fieldname
+    return animate_field(var; label=label, kwargs...)
+end
+
+
+"Animate a field."
+function animate_field(
+    data::AbstractArray;
     skip::Int=1,
     level::Int=0,
     framerate::Int=5,
@@ -84,11 +101,10 @@ function animate_field(
 )
     lat, lon = get_latlon()
     mask = get_mask()
-    var = NCDataset(filename)[fieldname]
-    data = (level > 0) ? var[:, :, level, :] : var[:, :, :]
+    data = (level > 0) ? data[:, :, level, :] : data[:, :, :]
     obs = Observable(data[:, :, 1] .* mask)
     fig, ax, plt = _surface!(obs, colorrange=extrema(data))
-    label = haskey(kwargs, :label) ? kwargs[:label] : fieldname
+    label = haskey(kwargs, :label) ? kwargs[:label] : ""
     Colorbar(fig[1,2], plt, label=label);
 
     rec = Record(fig, 1:size(data)[3], framerate=framerate) do i
@@ -125,7 +141,17 @@ end
 
 
 "Show kilometers on axes instead of degrees."
-function _set_ticks_in_km!(
+function set_ticks_in_km!(
+    coord_filename::String,
+)
+    ax = current_axis()
+    lat, lon = get_latlon(coord_filename)
+    set_ticks_in_km!(ax, lat, lon)
+    return
+end
+
+
+function set_ticks_in_km!(
     ax::Axis,
     lat::Matrix{T},
     lon::Matrix{T},
@@ -137,6 +163,9 @@ function _set_ticks_in_km!(
     yticklabs, y_inds = _get_ticks(lat, 5)
     ax.xticks = (lon[x_inds], string.(xticklabs))
     ax.yticks = (lat[y_inds], string.(yticklabs))
+    ax.xlabel = "km"
+    ax.ylabel = "km"
+    return
 end
 
 
